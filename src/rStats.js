@@ -58,7 +58,17 @@
  * @property {Boolean} [interpolate=true] Whether framerate should be interpolated.
  */
 
-window.rStats = function rStats ( settings ) {
+ (function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports = factory();
+    } else {
+        root.returnExports = factory();
+    }
+ }(this, function () {
+
+function rStats ( settings ) {
 
     function iterateKeys ( array, callback ) {
         var keys = Object.keys( array );
@@ -77,16 +87,49 @@ window.rStats = function rStats ( settings ) {
 
     }
 
+    function inlineCSS ( css ) {
+
+        var head = document.head || document.getElementsByTagName('head')[0];
+        var style = document.createElement('style');
+
+        style.type = 'text/css';
+        if (style.styleSheet){
+          style.styleSheet.cssText = css;
+        } else {
+          style.appendChild(document.createTextNode(css));
+        }
+
+        head.appendChild(style);
+
+    }
+
     var _settings = settings || {};
     var _colours = _settings.colours || [ '#850700', '#c74900', '#fcb300', '#284280', '#4c7c0c' ];
 
     var _cssFont = 'https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700,300';
-    var _cssRStats = ( _settings.CSSPath ? _settings.CSSPath : '' ) + 'rStats.css';
+    var _cssRStats = [
+        ".alarm{color:#b70000;text-shadow:0 0 0 #b70000,0 0 1px #fff,0 0 1px #fff,0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 3px #fff,0 0 4px #fff,0 0 4px #fff;}",
+        ".rs-base{position:absolute;z-index:10000;padding:10px;color:#fff;background-color:#222;font-size:10px;line-height:1.2em;width:350px;font-family:'Roboto Condensed',tahoma,sans-serif;left:0;top:0;overflow:hidden;}",
+        ".rs-base h1{margin:0;padding:0;font-size:1.4em;color:#fff;margin-bottom:5px;cursor:pointer;}",
+        ".rs-base div.rs-group{margin-bottom:10px;}",
+        ".rs-base div.rs-group.hidden{display:none;}",
+        ".rs-base div.rs-fraction{position:relative;margin-bottom:5px;}",
+        ".rs-base div.rs-fraction p{width:120px;text-align:right;margin:0;padding:0;}",
+        ".rs-base div.rs-legend{position:absolute;line-height:1em;}",
+        ".rs-base div.rs-counter-base{position:relative;margin:2px 0;height:1em;}",
+        ".rs-base span.rs-counter-id{position:absolute;left:0;top:0;}",
+        ".rs-base div.rs-counter-value{position:absolute;left:90px;width:30px;height:1em;top:0;text-align:right;}",
+        ".rs-base canvas.rs-canvas{position:absolute;right:0;}"
+    ].join('\n');
 
-    var _css = _settings.css || [ _cssFont, _cssRStats ];
+    var _css = _settings.css || [ _cssFont ];
+    var _cssInline = [ _cssRStats ];
     _css.forEach(function (uri) {
         importCSS( uri );
     });
+    _cssInline.forEach(function (css) {
+        inlineCSS( css );
+    })
 
     if ( !_settings.values ) _settings.values = {};
 
@@ -473,6 +516,7 @@ window.rStats = function rStats ( settings ) {
 
 }
 
-if (typeof module === 'object') {
-  module.exports = window.rStats;
-}
+var exports = {}
+exports.Stats = rStats
+return exports;
+}));
